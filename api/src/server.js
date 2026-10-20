@@ -137,11 +137,15 @@ app.use("/api", wrap(authRoutes));
 app.use("/api", exigeLogin, apiRapida, wrap(contasRoutes), wrap(vendasRoutes), wrap(rotaRoutes), wrap(perfilRoutes), wrap(comissaoRoutes), wrap(dadosRoutes), wrap(relatoriosRoutes), wrap(extratoRoutes), wrap(viabilidadeRoutes), wrap(vendaExternaRoutes), wrap(anexosRoutes), wrap(operacaoRoutes), wrap(qualidadeRoutes), wrap(importacaoRoutes), wrap(notificacoesRoutes), wrap(crmRoutes));
 app.use("/api", (_q, res) => res.status(404).json({ erro: "Não encontrado." }));
 
-app.use((e, _q, res, _n) => {
+app.use((e, req, res, _n) => {
   if (e.type === "entity.too.large" || e.status === 413) return res.status(413).json({ erro: "Arquivo grande demais para enviar. Use uma imagem menor." });
   if (e.type === "entity.parse.failed") return res.status(400).json({ erro: "Requisição inválida." });
   if (e.status) return res.status(e.status).json({ erro: e.message, ...(e.extra || {}) });
-  if (e.code === "42501") return res.status(403).json({ erro: "O banco recusou: sem permissão para esta operação." });
+  if (e.code === "42501") {
+    // registra no log do Render o que o banco recusou (tabela, função e rota), sem expor isso ao navegador
+    console.error(new Date().toISOString(), "42501", req.method, req.originalUrl, "|", e.message, "|", e.detail || "", "|", e.where || "", "| perfil:", req.user?.perfil || "-");
+    return res.status(403).json({ erro: "O banco recusou: sem permissão para esta operação." });
+  }
   // tabela ou coluna que ainda não existe no banco: faltou rodar algum arquivo da pasta db
   if (e.code === "42P01" || e.code === "42703" || e.code === "42883") {
     console.error(new Date().toISOString(), e.code, e.message);
