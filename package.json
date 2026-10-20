@@ -1,0 +1,10 @@
+{
+  "name": "norte-link-demo",
+  "private": true,
+  "description": "Raiz para o Heroku: instala e inicia a API que está na pasta api/",
+  "engines": { "node": "20.x" },
+  "scripts": {
+    "heroku-postbuild": "npm --prefix api install --omit=dev",
+    "start": "node api/src/server.js"
+  }
+}
